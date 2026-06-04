@@ -1,0 +1,1131 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import InteractiveCard from "@/components/InteractiveCard";
+import FloatingParticles from "@/components/FloatingParticles";
+import RollingCounter from "@/components/RollingCounter";
+
+import {
+  Camera,
+  MessageCircle,
+  Radio,
+  Play,
+  ArrowUpRight,
+  Star,
+  Sparkles,
+} from "lucide-react";
+
+export default function Page() {
+  const [user, setUser] = useState(null);
+  const [displayFollowers, setDisplayFollowers] = useState(0);
+  const [updatedAt, setUpdatedAt] = useState("");
+  const [status, setStatus] = useState("loading");
+  const [error, setError] = useState("");
+  const [scrolled, setScrolled] = useState(false);
+  const [mousePosition, setMousePosition] = useState({
+    x: 0,
+    y: 0,
+  });
+
+  const animatedValueRef = useRef(0);
+  const animationRef = useRef(null);
+  const hasLoadedOnceRef = useRef(false);
+
+  const socials = [
+    {
+      label: "TikTok",
+      note: "VIDEOS VIRALES",
+      action: "Ver contenido",
+      href: "https://www.tiktok.com/@icalexir",
+      icon: Play,
+      featured: true,
+    },
+    {
+      label: "Instagram",
+      note: "MARCA PERSONAL",
+      action: "Ver perfil",
+      href: "https://www.instagram.com/icalexir/",
+      icon: Camera,
+      featured: false,
+    },
+    {
+      label: "Kick",
+      note: "STREAM EN VIVO",
+      action: "Ver stream",
+      href: "https://kick.com/icalexirk",
+      icon: Radio,
+      featured: false,
+    },
+    {
+      label: "WhatsApp",
+      note: "TRABAJA CONMIGO",
+      action: "Escríbeme",
+      href: "https://wa.me/593978997065",
+      icon: MessageCircle,
+      featured: false,
+    },
+  ];
+
+  async function cargarStats() {
+    try {
+      const res = await fetch("/api/stats", {
+        cache: "no-store",
+      });
+
+      const rawText = await res.text();
+
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error("La API devolvió una respuesta inválida");
+      }
+
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudieron cargar las estadísticas");
+      }
+
+      if (data?.data?.user) {
+        setUser(data.data.user);
+        setUpdatedAt(new Date().toLocaleTimeString("es-EC"));
+        setStatus("online");
+        setError("");
+        hasLoadedOnceRef.current = true;
+      } else {
+        throw new Error("Respuesta inválida de la API");
+      }
+    } catch (err) {
+      const message = err?.message || "Error cargando estadísticas";
+
+      if (hasLoadedOnceRef.current && user) {
+        setStatus("stale");
+        setError(`Último dato conservado. ${message}`);
+      } else {
+        setStatus("offline");
+        setError(message);
+      }
+    }
+  }
+
+  useEffect(() => {
+    cargarStats();
+    const interval = setInterval(cargarStats, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!user?.follower_count && user?.follower_count !== 0) return;
+
+    const start = animatedValueRef.current;
+    const target = user.follower_count;
+
+    if (start === target) return;
+
+    const duration = 1000;
+    const startTime = performance.now();
+
+    const animate = (time) => {
+      const progress = Math.min((time - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 4);
+      const current = Math.round(start + (target - start) * eased);
+
+      animatedValueRef.current = current;
+      setDisplayFollowers(current);
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [user?.follower_count]);
+  useEffect(() => {
+  const handleMouseMove = (e) => {
+    setMousePosition({
+      x: e.clientX,
+      y: e.clientY,
+    });
+  };
+
+  window.addEventListener("mousemove", handleMouseMove);
+
+  return () => {
+    window.removeEventListener("mousemove", handleMouseMove);
+  };
+}, []);
+
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background:
+          "radial-gradient(circle at top, rgba(190,24,93,0.24), transparent 22%), radial-gradient(circle at 80% 15%, rgba(34,211,238,0.11), transparent 18%), #050505",
+        color: "white",
+        fontFamily:
+          'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        overflowX: "hidden",
+        position: "relative",
+        scrollSnapType: "y proximity",
+      }}
+    >
+      <FloatingParticles />
+      <motion.div
+  animate={{
+    x: mousePosition.x - 300,
+    y: mousePosition.y - 300,
+  }}
+  transition={{
+    type: "spring",
+    stiffness: 40,
+    damping: 20,
+    mass: 0.8,
+  }}
+  style={{
+    position: "fixed",
+    width: "600px",
+    height: "600px",
+    borderRadius: "999px",
+    background:
+      "radial-gradient(circle, rgba(255,70,160,0.16), transparent 65%)",
+    pointerEvents: "none",
+    zIndex: 0,
+    filter: "blur(40px)",
+    mixBlendMode: "screen",
+  }}
+/>
+
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
+          backgroundSize: "34px 34px",
+          opacity: 0.08,
+          pointerEvents: "none",
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(circle at 20% 18%, rgba(255,80,170,0.05), transparent 20%), radial-gradient(circle at 78% 14%, rgba(90,220,255,0.05), transparent 18%), radial-gradient(circle at 50% 70%, rgba(255,255,255,0.015), transparent 22%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      <header
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          backdropFilter: scrolled ? "blur(22px)" : "blur(12px)",
+          background: scrolled ? "rgba(5,5,5,0.78)" : "rgba(5,5,5,0.54)",
+          borderBottom: scrolled
+            ? "1px solid rgba(255,255,255,0.10)"
+            : "1px solid rgba(255,255,255,0.06)",
+          boxShadow: scrolled
+            ? "0 10px 30px rgba(0,0,0,0.22)"
+            : "0 0 0 rgba(0,0,0,0)",
+          transition: "all 0.28s ease",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1220px",
+            margin: "0 auto",
+            padding: "18px 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "20px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: "20px",
+                fontWeight: 900,
+                letterSpacing: "0.02em",
+                textTransform: "lowercase",
+              }}
+            >
+              icalexir
+            </div>
+          </div>
+
+          <nav style={{ display: "flex", gap: "18px", flexWrap: "wrap" }}>
+            <a href="#inicio" style={navLink}>Inicio</a>
+            <a href="#redes" style={navLink}>Redes</a>
+            <a href="#contador" style={navLink}>Comunidad</a>
+            <a href="#contacto" style={navLink}>Contacto</a>
+          </nav>
+        </div>
+      </header>
+
+      <main>
+        <section id="inicio" style={sectionSnap}>
+          <div
+            style={{
+              maxWidth: "1220px",
+              margin: "0 auto",
+              padding: "88px 24px 70px",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                gap: "30px",
+                alignItems: "center",
+              }}
+            >
+              <motion.div
+                variants={stagger}
+                initial="hidden"
+                animate="show"
+              >
+                <motion.div variants={fadeUp} style={badge}>
+                  Creador de contenido
+                </motion.div>
+
+                <motion.h1
+                  variants={fadeUp}
+                  transition={{ duration: 0.78, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    margin: "22px 0 0 0",
+                    fontSize: "clamp(56px, 10vw, 118px)",
+                    lineHeight: 0.88,
+                    fontWeight: 900,
+                    letterSpacing: "-0.06em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  ALEXIS GER
+                </motion.h1>
+
+                <motion.div
+                  variants={fadeUp}
+                  transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    marginTop: "16px",
+                    fontSize: "clamp(16px, 2.4vw, 24px)",
+                    fontWeight: 700,
+                    letterSpacing: "0.04em",
+                    textTransform: "lowercase",
+                    color: "rgba(255,255,255,0.72)",
+                  }}
+                >
+                  icalexir
+                </motion.div>
+
+                <motion.h2
+                  variants={fadeUp}
+                  transition={{ duration: 0.84, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    margin: "30px 0 0 0",
+                    fontSize: "clamp(34px, 5.5vw, 72px)",
+                    lineHeight: 0.95,
+                    fontWeight: 900,
+                    letterSpacing: "-0.05em",
+                    maxWidth: "760px",
+                  }}
+                >
+                  Si no destaca,
+                  <span
+                    style={{
+                      display: "block",
+                      background: "linear-gradient(90deg, #ff4ea4, #ffd0ea 32%, #ffffff 58%)",
+                      WebkitBackgroundClip: "text",
+                      color: "transparent",
+                    }}
+                  >
+                    no existe.
+                  </span>
+                </motion.h2>
+
+                <motion.p
+                  variants={fadeUp}
+                  transition={{ duration: 0.82, ease: [0.22, 1, 0.36, 1] }}
+                  style={{
+                    marginTop: "22px",
+                    maxWidth: "680px",
+                    color: "rgba(255,255,255,0.66)",
+                    fontSize: "18px",
+                    lineHeight: 1.9,
+                  }}
+                >
+                  Centralizo aquí mi contenido, comunidad y oportunidades de trabajo con una estética más urbana, premium y con presencia real.
+                </motion.p>
+
+                <motion.div
+                  variants={fadeUp}
+                  style={{
+                    display: "flex",
+                    gap: "14px",
+                    flexWrap: "wrap",
+                    marginTop: "30px",
+                  }}
+                >
+                  <motion.a
+                    whileHover={{
+                      y: -2,
+                      scale: 1.022,
+                      boxShadow: "0 0 44px rgba(255,78,164,0.38), 0 12px 30px rgba(0,0,0,0.22)",
+                    }}
+                    whileTap={{ scale: 0.982 }}
+                    transition={{ duration: 0.22 }}
+                    href="https://www.instagram.com/channel/AbaWPIu14iKSAHJD/"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={primaryButton}
+                  >
+                    Ver contenido
+                  </motion.a>
+
+                  <motion.a
+                    whileHover={{
+                      y: -2,
+                      scale: 1.018,
+                      boxShadow: "0 0 30px rgba(255,255,255,0.08)",
+                      borderColor: "rgba(255,255,255,0.24)",
+                      background: "rgba(255,255,255,0.05)",
+                    }}
+                    whileTap={{ scale: 0.985 }}
+                    transition={{ duration: 0.22 }}
+                    href="#contacto"
+                    style={secondaryButton}
+                  >
+                    Trabajar conmigo
+                  </motion.a>
+                </motion.div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 30, scale: 0.982 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.9, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div style={glassWrap}>
+                  <motion.div
+                    whileHover={{ scale: 1.01 }}
+                    transition={{ duration: 0.35 }}
+                    style={{
+                      position: "relative",
+                      overflow: "hidden",
+                      borderRadius: "28px",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <img
+                      src="/hero.jpg"
+                      alt="Alexis Ger"
+                      onError={(e) => {
+                        e.currentTarget.src =
+                          "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80";
+                      }}
+                      style={{
+                        width: "100%",
+                        height: "560px",
+                        display: "block",
+                        objectFit: "cover",
+                        objectPosition: "center",
+                      }}
+                    />
+
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background:
+                          "linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0.18), transparent)",
+                      }}
+                    />
+
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        boxShadow:
+                          "inset 0 0 120px rgba(255,80,170,0.10), inset 0 0 60px rgba(90,220,255,0.06)",
+                        pointerEvents: "none",
+                      }}
+                    />
+
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: "24px",
+                        right: "24px",
+                        bottom: "24px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: "18px",
+                        flexWrap: "wrap",
+                        alignItems: "end",
+                      }}
+                    >
+                      <div>
+                        <div style={miniBadge}>
+                          Retrato oficial
+                        </div>
+
+                        <p
+                          style={{
+                            margin: "16px 0 0 0",
+                            color: "rgba(255,255,255,0.78)",
+                            maxWidth: "440px",
+                            lineHeight: 1.8,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Presencia visual, identidad propia y una landing con carácter.
+                        </p>
+                      </div>
+
+                      <div style={statusCard}>
+                        <div style={statusLabel}>Estado</div>
+                        <div style={statusValue}>Creativo activo</div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        <section id="redes" style={sectionSnap}>
+          <div
+            style={{
+              maxWidth: "1220px",
+              margin: "0 auto",
+              padding: "0 24px 70px",
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.55 }}
+              style={glassWrap}
+            >
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.42)",
+                  fontSize: "12px",
+                  letterSpacing: "0.02em",
+                  lineHeight: 1.7,
+                }}
+              >
+                Cada plataforma, una forma distinta de destacar
+              </div>
+
+              <div
+                style={{
+                  marginTop: "12px",
+                  fontSize: "clamp(28px, 4vw, 44px)",
+                  fontWeight: 900,
+                  textTransform: "uppercase",
+                  letterSpacing: "-0.03em",
+                }}
+              >
+                MIS REDES SOCIALES
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                  gap: "14px",
+                  marginTop: "24px",
+                }}
+              >
+                {socials.map((item, index) => {
+                  const Icon = item.icon;
+                  const featured = !!item.featured;
+
+                  return (
+                    <InteractiveCard
+                      key={item.label}
+                      href={item.href}
+                      delay={index * 0.06}
+                      style={{
+                        ...socialCard,
+                        gridColumn: featured ? "span 2" : "span 1",
+                        minHeight: featured ? "245px" : "215px",
+                        border: featured
+                          ? "1px solid rgba(255,90,170,0.20)"
+                          : "1px solid rgba(255,255,255,0.08)",
+                        background: featured
+                          ? "linear-gradient(180deg, rgba(255,70,160,0.06), rgba(255,255,255,0.025))"
+                          : socialCard.background,
+                      }}
+                      featured={featured}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "start",
+                          gap: "12px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            color: featured
+                              ? "rgba(255,220,236,0.74)"
+                              : "rgba(255,255,255,0.4)",
+                            fontSize: "11px",
+                            letterSpacing: "0.18em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {item.note}
+                        </div>
+
+                        <motion.div
+                          whileHover={{ scale: 1.08, rotate: -4 }}
+                          transition={{ duration: 0.22 }}
+                          style={{
+                            ...iconWrap,
+                            boxShadow: featured
+                              ? "0 0 24px rgba(255,90,170,0.12)"
+                              : iconWrap.boxShadow,
+                          }}
+                        >
+                          <Icon size={18} strokeWidth={2.1} />
+                        </motion.div>
+                      </div>
+
+                      {featured && (
+                        <div
+                          style={{
+                            marginTop: "14px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "8px 12px",
+                            borderRadius: "999px",
+                            background: "rgba(255,90,170,0.08)",
+                            border: "1px solid rgba(255,90,170,0.18)",
+                            color: "#ff7db9",
+                            fontSize: "10px",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.16em",
+                            width: "fit-content",
+                          }}
+                        >
+                          <Star size={12} />
+                          principal
+                        </div>
+                      )}
+
+                      <div
+                        style={{
+                          marginTop: featured ? "18px" : "28px",
+                          fontSize: featured ? "36px" : "26px",
+                          fontWeight: 900,
+                          textTransform: "uppercase",
+                          letterSpacing: "-0.03em",
+                        }}
+                      >
+                        {item.label}
+                      </div>
+
+                      <motion.div
+                        whileHover={{ x: 2 }}
+                        transition={{ duration: 0.2 }}
+                        style={{
+                          marginTop: "18px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "10px 14px",
+                          borderRadius: "999px",
+                          border: featured
+                            ? "1px solid rgba(255,120,185,0.20)"
+                            : "1px solid rgba(255,255,255,0.1)",
+                          background: featured
+                            ? "rgba(255,80,170,0.06)"
+                            : "rgba(0,0,0,0.22)",
+                          fontSize: "11px",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.18em",
+                          color: "rgba(255,255,255,0.82)",
+                        }}
+                      >
+                        {item.action}
+                        <ArrowUpRight size={14} />
+                      </motion.div>
+                    </InteractiveCard>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+<section id="contador" style={sectionSnap}>
+          <div
+            style={{
+              maxWidth: "1220px",
+              margin: "0 auto",
+              padding: "0 24px 90px",
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              style={glassWrap}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "start",
+                  gap: "20px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      color: "rgba(255,255,255,0.38)",
+                      fontSize: "12px",
+                      letterSpacing: "0.3em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    CONTADOR REAL DE SEGUIDORES
+                  </div>
+
+                  <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "16px" }}>
+                    <div style={tiktokBadge}>TikTok</div>
+
+                    <div
+                      style={
+                        status === "online"
+                          ? onlineBadge
+                          : status === "stale"
+                          ? staleBadge
+                          : offlineBadge
+                      }
+                    >
+                      {status === "online"
+                        ? "online"
+                        : status === "stale"
+                        ? "último dato"
+                        : status === "loading"
+                        ? "cargando"
+                        : "offline"}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={updateCard}>
+                  <div style={updateLabel}>Última actualización</div>
+                  <div style={updateValue}>{updatedAt || "--:--:--"}</div>
+                </div>
+              </div>
+
+              <motion.div
+                animate={{
+                  textShadow:
+                    status === "online"
+                      ? [
+                          "0 0 12px rgba(255,78,164,0.16)",
+                          "0 0 26px rgba(255,78,164,0.28)",
+                          "0 0 12px rgba(255,78,164,0.16)",
+                        ]
+                      : "0 0 12px rgba(255,255,255,0.06)",
+                }}
+                transition={{
+                  duration: 2.2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                style={{
+                  marginTop: "34px",
+                  fontSize: "clamp(54px, 10vw, 108px)",
+                  lineHeight: 0.95,
+                  fontWeight: 900,
+                  letterSpacing: "-0.05em",
+                  color: status === "offline" ? "#ffffff" : "#ff5aaa",
+                }}
+              >
+                <RollingCounter value={displayFollowers} />
+              </motion.div>
+
+              <div
+                style={{
+                  marginTop: "12px",
+                  color: "rgba(255,255,255,0.58)",
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  fontSize: "12px",
+                }}
+              >
+                SEGUIDORES EN TIKTOK
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                  gap: "16px",
+                  marginTop: "28px",
+                }}
+              >
+                <div style={infoCard}>
+                  <div style={infoLabel}>Usuario</div>
+                  <div style={infoValue}>@{user?.username || "icalexir"}</div>
+                </div>
+
+                <div style={infoCard}>
+                  <div style={infoLabel}>Fuente</div>
+                  <div style={infoValue}>API /api/stats</div>
+                </div>
+              </div>
+
+              {error && (
+                <div
+                  style={{
+                    marginTop: "18px",
+                    color: status === "stale" ? "#ffd58a" : "#ff9b9b",
+                    fontSize: "13px",
+                    opacity: 0.92,
+                  }}
+                >
+                  {error}
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </section>
+
+        <section id="contacto" style={sectionSnap}>
+          <div
+            style={{
+              maxWidth: "1220px",
+              margin: "0 auto",
+              padding: "0 24px 90px",
+              textAlign: "center",
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <div
+                style={{
+                  fontSize: "12px",
+                  letterSpacing: "0.26em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.36)",
+                }}
+              >
+                CONTACTO / ACCESO
+              </div>
+
+              <a
+                href="https://www.instagram.com/icalexir/"
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: "inline-block",
+                  marginTop: "18px",
+                  color: "#ffffff",
+                  textDecoration: "none",
+                  fontSize: "clamp(28px, 5vw, 52px)",
+                  lineHeight: 1,
+                  fontWeight: 900,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                }}
+              >
+                @ICALEXIR
+              </a>
+
+              <div
+                style={{
+                  marginTop: "16px",
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <div style={footerGlow}>
+                  <Sparkles size={14} />
+                  presencia digital con intención
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+const sectionSnap = {
+  scrollSnapAlign: "start",
+};
+
+const navLink = {
+  color: "rgba(255,255,255,0.76)",
+  textDecoration: "none",
+  fontSize: "12px",
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  transition: "all 0.28s ease",
+};
+
+const badge = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "10px",
+  padding: "10px 16px",
+  borderRadius: "999px",
+  border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.04)",
+  color: "rgba(255,255,255,0.74)",
+  letterSpacing: "0.02em",
+  fontSize: "12px",
+  boxShadow: "0 0 24px rgba(255,255,255,0.03)",
+};
+
+const glassWrap = {
+  background:
+    "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03))",
+  border: "1px solid rgba(255,255,255,0.09)",
+  boxShadow: "0 20px 80px rgba(0,0,0,0.45)",
+  backdropFilter: "blur(10px)",
+  borderRadius: "34px",
+  padding: "22px",
+};
+
+const primaryButton = {
+  textDecoration: "none",
+  color: "#fff",
+  background: "linear-gradient(135deg, #ff4a9f, #ff7bbd)",
+  padding: "15px 24px",
+  borderRadius: "18px",
+  fontWeight: 800,
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  boxShadow: "0 0 34px rgba(255,80,170,0.26)",
+  fontSize: "13px",
+  transition: "all 0.28s ease",
+  border: "1px solid rgba(255,255,255,0.10)",
+};
+
+const secondaryButton = {
+  textDecoration: "none",
+  color: "rgba(255,255,255,0.84)",
+  padding: "15px 22px",
+  borderRadius: "18px",
+  border: "1px solid rgba(255,255,255,0.14)",
+  background: "rgba(255,255,255,0.03)",
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  fontSize: "13px",
+  transition: "all 0.28s ease",
+};
+
+const miniBadge = {
+  display: "inline-block",
+  padding: "10px 14px",
+  borderRadius: "999px",
+  background: "rgba(0,0,0,0.38)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  fontSize: "11px",
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  color: "rgba(255,255,255,0.78)",
+};
+
+const statusCard = {
+  padding: "14px 16px",
+  borderRadius: "20px",
+  background: "rgba(0,0,0,0.38)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  minWidth: "180px",
+};
+
+const statusLabel = {
+  color: "rgba(255,255,255,0.4)",
+  fontSize: "11px",
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+};
+
+const statusValue = {
+  marginTop: "10px",
+  fontSize: "18px",
+  fontWeight: 900,
+  textTransform: "uppercase",
+};
+
+const socialCard = {
+  textDecoration: "none",
+  color: "white",
+  background:
+    "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025))",
+  borderRadius: "28px",
+  padding: "20px",
+  boxSizing: "border-box",
+  boxShadow: "0 16px 50px rgba(0,0,0,0.28)",
+  transition: "all 0.32s ease",
+};
+
+const iconWrap = {
+  width: "38px",
+  height: "38px",
+  display: "grid",
+  placeItems: "center",
+  borderRadius: "14px",
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  color: "#ffffff",
+  boxShadow: "0 0 20px rgba(255,80,170,0.08)",
+};
+
+const tiktokBadge = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "10px",
+  padding: "10px 14px",
+  borderRadius: "999px",
+  background: "rgba(255,60,149,0.1)",
+  border: "1px solid rgba(255,60,149,0.22)",
+  color: "#ff64af",
+  fontSize: "11px",
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  fontWeight: 800,
+};
+
+const onlineBadge = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "10px",
+  padding: "10px 14px",
+  borderRadius: "999px",
+  background: "rgba(34,211,238,0.1)",
+  border: "1px solid rgba(34,211,238,0.22)",
+  color: "#7deaff",
+  fontSize: "11px",
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  fontWeight: 800,
+};
+
+const staleBadge = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "10px",
+  padding: "10px 14px",
+  borderRadius: "999px",
+  background: "rgba(255,190,60,0.1)",
+  border: "1px solid rgba(255,190,60,0.22)",
+  color: "#ffd58a",
+  fontSize: "11px",
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  fontWeight: 800,
+};
+
+const offlineBadge = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "10px",
+  padding: "10px 14px",
+  borderRadius: "999px",
+  background: "rgba(255,90,90,0.1)",
+  border: "1px solid rgba(255,90,90,0.22)",
+  color: "#ff9b9b",
+  fontSize: "11px",
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+  fontWeight: 800,
+};
+
+const updateCard = {
+  minWidth: "220px",
+  padding: "16px",
+  borderRadius: "22px",
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.03)",
+};
+
+const updateLabel = {
+  color: "rgba(255,255,255,0.38)",
+  fontSize: "11px",
+  letterSpacing: "0.2em",
+  textTransform: "uppercase",
+};
+
+const updateValue = {
+  marginTop: "12px",
+  fontSize: "20px",
+  fontWeight: 800,
+};
+
+const infoCard = {
+  background:
+    "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025))",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: "28px",
+  padding: "22px",
+  boxSizing: "border-box",
+  boxShadow: "0 16px 50px rgba(0,0,0,0.28)",
+};
+
+const infoLabel = {
+  color: "rgba(255,255,255,0.38)",
+  fontSize: "11px",
+  letterSpacing: "0.18em",
+  textTransform: "uppercase",
+};
+
+const infoValue = {
+  marginTop: "10px",
+  fontSize: "20px",
+  fontWeight: 900,
+};
+
+const footerGlow = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "8px",
+  padding: "10px 14px",
+  borderRadius: "999px",
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "rgba(255,255,255,0.74)",
+  fontSize: "12px",
+  letterSpacing: "0.06em",
+  textTransform: "lowercase",
+  boxShadow: "0 0 28px rgba(255,80,170,0.08)",
+};

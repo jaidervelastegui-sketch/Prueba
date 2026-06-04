@@ -1,0 +1,246 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #050505;
+  --card: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.08);
+
+  --pink: #ff4ea4;
+  --pink-light: #ff7dc0;
+
+  --cyan: #63e9ff;
+
+  --text: #ffffff;
+  --text-soft: rgba(255,255,255,0.65);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+
+  background: var(--bg);
+  color: var(--text);
+
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  position: relative;
+}
+
+/* Fondo premium */
+
+body::before {
+  content: "";
+
+  position: fixed;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(255, 70, 160, 0.16),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 85% 15%,
+      rgba(0, 255, 255, 0.08),
+      transparent 25%
+    ),
+    radial-gradient(
+      circle at 50% 90%,
+      rgba(255,255,255,0.03),
+      transparent 30%
+    );
+
+  pointer-events: none;
+
+  z-index: -2;
+}
+
+/* Cuadrícula elegante */
+
+body::after {
+  content: "";
+
+  position: fixed;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      rgba(255,255,255,0.03) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,0.03) 1px,
+      transparent 1px
+    );
+
+  background-size: 34px 34px;
+
+  opacity: 0.08;
+
+  pointer-events: none;
+
+  z-index: -1;
+}
+
+/* Tarjetas */
+
+.glass-card {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.05),
+      rgba(255,255,255,0.02)
+    );
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+  backdrop-filter: blur(16px);
+
+  border-radius: 28px;
+
+  transition:
+    transform .3s ease,
+    border-color .3s ease,
+    box-shadow .3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-6px);
+
+  border-color:
+    rgba(255,255,255,0.14);
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.45);
+}
+
+/* Texto degradado */
+
+.text-gradient {
+  background: linear-gradient(
+    90deg,
+    #ff4ea4,
+    #ffd1ea,
+    #ffffff
+  );
+
+  background-clip: text;
+  -webkit-background-clip: text;
+
+  color: transparent;
+}
+
+/* Botón principal */
+
+.btn-primary {
+  text-decoration: none;
+
+  padding: 15px 24px;
+
+  border-radius: 18px;
+
+  font-size: 13px;
+
+  font-weight: 800;
+
+  letter-spacing: .18em;
+
+  text-transform: uppercase;
+
+  color: white;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ff4ea4,
+      #ff7dc0
+    );
+
+  border:
+    1px solid rgba(255,255,255,.1);
+
+  box-shadow:
+    0 0 34px rgba(255,78,164,.25);
+
+  transition: .3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 0 44px rgba(255,78,164,.35);
+}
+
+/* Botón secundario */
+
+.btn-secondary {
+  text-decoration: none;
+
+  padding: 15px 24px;
+
+  border-radius: 18px;
+
+  border:
+    1px solid rgba(255,255,255,.12);
+
+  background:
+    rgba(255,255,255,.03);
+
+  color: white;
+
+  transition: .3s ease;
+}
+
+.btn-secondary:hover {
+  background:
+    rgba(255,255,255,.05);
+
+  border-color:
+    rgba(255,255,255,.2);
+}
+
+/* Scroll */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.15);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,.25);
+}
+
+/* Selección */
+
+::selection {
+  background: rgba(255,78,164,.3);
+}
